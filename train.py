@@ -109,3 +109,31 @@ nb_validation_samples =
 epochs = 50
 batch_size = 32
 
+history = model.fit_generator(
+    train_generator,
+    steps_per_epoch=nb_train_samples//batch_size,
+    epochs=epochs,
+    callbacks=callbacks,
+    validation_data=validation_generator,
+    validation_steps=nb_validation_samples//batch_size)
+
+print(history.history.keys())
+plot_model(model, to_file='model.png')
+
+# summarize history for accuracy
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
+
+# summarize history for loss
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
