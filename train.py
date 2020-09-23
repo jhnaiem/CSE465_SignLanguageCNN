@@ -17,6 +17,11 @@ img_rows, img_cols = 128, 128
 VGG = VGG16(weights='imagenet', include_top=False,
             input_shape=(img_rows, img_cols, 3))
 
+
+# LOCK THE TOP CONV LAYERS or
+#Blocking (or freezing) of the upper layers (TOP
+# loop over the layers in VGG  and
+# freeze the layers
 for layer in VGG.layers:
     layer.trainable = False
 
@@ -24,6 +29,7 @@ for layer in VGG.layers:
 def addTopModelVGG(bottom_model, num_classes):
 
     top_model = bottom_model.output
+    #top_model =Flatten()(top_model)
     top_model = GlobalAveragePooling2D()(top_model)
     top_model = Dense(512, activation='relu')(top_model)
     top_model = Dense(256, activation='relu')(top_model)
@@ -35,7 +41,7 @@ def addTopModelVGG(bottom_model, num_classes):
     return top_model
 
 
-num_classes = 8
+num_classes = 5
 
 FC_Head = addTopModelVGG(VGG, num_classes)
 
@@ -46,12 +52,13 @@ print(model.summary())
 train_data_dir = '/Users/jhasan/2nd_attempt/train'
 validation_data_dir = '/Users/jhasan/2nd_attempt/test'
 
+# CREATE THE IMAGE GENERATORS
 train_datagen = ImageDataGenerator(
     rescale=1./255,
-    rotation_range=30,
-    width_shift_range=0.3,
-    height_shift_range=0.3,
-    horizontal_flip=True,
+    rotation_range=30,  # randomly rotate images in the range (degrees, 0 to 30)
+    width_shift_range=0.3, # randomly shift images horizontally (fraction of total width)
+    height_shift_range=0.3, # randomly shift images vertically (fraction of total height)
+    horizontal_flip=True,# randomly flip images
     fill_mode='nearest'
 )
 
@@ -67,11 +74,12 @@ train_generator = train_datagen.flow_from_directory(
     class_mode='categorical'
 )
 
-validation_generator = validation_datagen.flow_from_directory(
-    validation_data_dir,
+train_generator = train_datagen.flow_from_directory(
+    train_data_dir,
     target_size=(img_rows, img_cols),
     batch_size=batch_size,
-    class_mode='categorical')
+    class_mode='categorical'
+)
 
 
 checkpoint = ModelCheckpoint(
@@ -98,17 +106,19 @@ learning_rate_reduction = ReduceLROnPlateau(monitor='val_loss',
 
 callbacks = [earlystop, checkpoint, learning_rate_reduction]
 
+# COMPILE THE MODEL
 model.compile(loss='categorical_crossentropy',
               optimizer=Adam(lr=0.001),
               metrics=['accuracy']
               )
 
-nb_train_samples = 
-nb_validation_samples = 
+nb_train_samples =
+nb_validation_samples =
 
 epochs = 50
 batch_size = 32
 
+#  FIT THE MODEL
 history = model.fit_generator(
     train_generator,
     steps_per_epoch=nb_train_samples//batch_size,
