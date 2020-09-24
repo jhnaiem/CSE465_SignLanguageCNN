@@ -8,20 +8,11 @@ from keras.layers.normalization import BatchNormalization
 from keras.preprocessing.image import ImageDataGenerator
 from keras import backend as K
 
-from keras.utils.vis_utils import plot_model
-from matplotlib import pyplot as plt
-from time import time
-
 img_rows, img_cols = 128, 128
 
 VGG = VGG16(weights='imagenet', include_top=False,
             input_shape=(img_rows, img_cols, 3))
 
-
-# LOCK THE TOP CONV LAYERS or
-#Blocking (or freezing) of the upper layers (TOP
-# loop over the layers in VGG  and
-# freeze the layers
 for layer in VGG.layers:
     layer.trainable = False
 
@@ -29,7 +20,7 @@ for layer in VGG.layers:
 def addTopModelVGG(bottom_model, num_classes):
 
     top_model = bottom_model.output
-    #top_model =Flatten()(top_model)
+    # top_model =Flatten()(top_model)
     top_model = GlobalAveragePooling2D()(top_model)
     top_model = Dense(512, activation='relu')(top_model)
     top_model = Dense(256, activation='relu')(top_model)
@@ -49,16 +40,15 @@ model = Model(inputs=VGG.input, outputs=FC_Head)
 
 print(model.summary())
 
-train_data_dir = '/Users/jhasan/2nd_attempt/train'
-validation_data_dir = '/Users/jhasan/2nd_attempt/test'
+train_data_dir = '/Users/jhasan/4th_attempt/train'
+validation_data_dir = '/Users/jhasan/4th_attempt/test'
 
-# CREATE THE IMAGE GENERATORS
 train_datagen = ImageDataGenerator(
     rescale=1./255,
-    rotation_range=30,  # randomly rotate images in the range (degrees, 0 to 30)
-    width_shift_range=0.3, # randomly shift images horizontally (fraction of total width)
-    height_shift_range=0.3, # randomly shift images vertically (fraction of total height)
-    horizontal_flip=True,# randomly flip images
+    rotation_range=30,
+    width_shift_range=0.3,
+    height_shift_range=0.3,
+    horizontal_flip=True,
     fill_mode='nearest'
 )
 
@@ -70,20 +60,18 @@ train_generator = train_datagen.flow_from_directory(
     train_data_dir,
     target_size=(img_rows, img_cols),
     batch_size=batch_size,
-    shuffle=true,
     class_mode='categorical'
 )
 
-train_generator = train_datagen.flow_from_directory(
-    train_data_dir,
+validation_generator = validation_datagen.flow_from_directory(
+    validation_data_dir,
     target_size=(img_rows, img_cols),
     batch_size=batch_size,
-    class_mode='categorical'
-)
+    class_mode='categorical')
 
 
 checkpoint = ModelCheckpoint(
-    'trained_model_2.h5',
+    'trained_model.h5',
     monitor='val_loss',
     mode='min',
     save_best_only=True,
@@ -91,7 +79,7 @@ checkpoint = ModelCheckpoint(
 
 earlystop = EarlyStopping(
     monitor='val_loss',
-    min_delta=0.1,
+    min_delta=0,
     restore_best_weights=True,
     patience=10,
     verbose=1)
@@ -99,26 +87,22 @@ earlystop = EarlyStopping(
 learning_rate_reduction = ReduceLROnPlateau(monitor='val_loss',
                                             patience=5,
                                             verbose=1,
-                                            mode='min',
-                                            cooldown=0,
-                                            factor=0.1,
-                                            min_lr=0.01)
+                                            factor=0.2,
+                                            min_lr=0.0001)
 
 callbacks = [earlystop, checkpoint, learning_rate_reduction]
 
-# COMPILE THE MODEL
 model.compile(loss='categorical_crossentropy',
               optimizer=Adam(lr=0.001),
               metrics=['accuracy']
               )
 
-nb_train_samples =
-nb_validation_samples =
+nb_train_samples = 3000
+nb_validation_samples = 750
 
-epochs = 50
+epochs = 80
 batch_size = 32
 
-#  FIT THE MODEL
 history = model.fit_generator(
     train_generator,
     steps_per_epoch=nb_train_samples//batch_size,
@@ -126,6 +110,7 @@ history = model.fit_generator(
     callbacks=callbacks,
     validation_data=validation_generator,
     validation_steps=nb_validation_samples//batch_size)
+
 
 print(history.history.keys())
 plot_model(model, to_file='model.png')
@@ -147,3 +132,4 @@ plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
 plt.show()
+
